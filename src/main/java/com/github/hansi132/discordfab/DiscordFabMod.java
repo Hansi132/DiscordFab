@@ -12,10 +12,7 @@ import com.github.hansi132.discordfab.discordbot.util.Constants;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import org.kilocraft.essentials.api.KiloEssentials;
 import org.kilocraft.essentials.api.KiloServer;
-import org.kilocraft.essentials.api.event.EventHandler;
-import org.kilocraft.essentials.api.event.server.lifecycle.ServerReloadEvent;
 
 import java.io.File;
 import java.util.HashMap;
