@@ -61,7 +61,7 @@ public class Listener extends ListenerAdapter {
     @Override
     public void onGuildMessageReceived(@Nonnull GuildMessageReceivedEvent event) {
         final User user = event.getAuthor();
-        final long suggestionChat = 456904152279285760L;
+        final long suggestionChat = DiscordFab.getInstance().getConfig().suggestionChatId;
         if (user.isBot()) {
             return;
         }

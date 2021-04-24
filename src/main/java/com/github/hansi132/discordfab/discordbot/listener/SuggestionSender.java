@@ -1,10 +1,12 @@
 package com.github.hansi132.discordfab.discordbot.listener;
 
+import com.github.hansi132.discordfab.DiscordFab;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 
 import java.awt.*;
+import java.util.Objects;
 
 public class SuggestionSender {
 
@@ -22,5 +24,6 @@ public class SuggestionSender {
             message.addReaction(":upvote:657228604312256521").queue();
             message.addReaction(":downvote:657228570338394142").queue();
         });
+        Objects.requireNonNull(DiscordFab.getBot().getTextChannelById(DiscordFab.getInstance().getConfig().suggestionAdminChatId)).sendMessage(embedBuilder.build()).queue();
     }
 }
