@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '0.4-SNAPSHOT'
+    id 'fabric-loom' version '0.6-SNAPSHOT'
     id 'com.github.johnrengelman.shadow' version '5.1.0'
     id 'java'
 }
@@ -27,6 +27,11 @@ repositories {
         url = 'https://repo.spongepowered.org/maven'
     }
 
+    maven {
+        name 'm2-dv8tion'
+        url 'https://m2.dv8tion.net/releases'
+    }
+
     maven { url 'http://server.bbkr.space:8081/artifactory/libs-release' }
 }
 
@@ -45,11 +50,11 @@ dependencies {
 
     modImplementation "com.github.DrexHD:KiloEssentials:${project.kiloessentials_version}"
 
-    compile "net.luckperms:api:5.0"
+    compile "net.luckperms:api:5.3"
 
 
-    compile group: 'net.dv8tion', name: 'JDA', version: '4.1.1_150'
-    shadow group: 'net.dv8tion', name: 'JDA', version: '4.1.1_150'
+    compile group: 'net.dv8tion', name: 'JDA', version: '4.2.1_255'
+    shadow group: 'net.dv8tion', name: 'JDA', version: '4.2.1_255'
     compile group: 'com.jagrosh', name: 'jda-utilities', version: '3.0.3'
     shadow group: 'com.jagrosh', name: 'jda-utilities', version: '3.0.3'
     implementation group: 'me.duncte123', name: 'botCommons', version: '1.0.83'
