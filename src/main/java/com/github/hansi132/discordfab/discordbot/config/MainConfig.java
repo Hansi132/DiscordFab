@@ -44,4 +44,13 @@ public class MainConfig {
     @Setting
     public BotPretenseConfigSection activity = new BotPretenseConfigSection();
 
+    @Setting
+    public Long suggestionChatId = 829822701254082621L;
+
+    @Setting
+    public Long suggestionAdminChatId = 830791613176741890L;
+
+    @Setting
+    public Long banSenderChat = 530489915964653580L;
+
 }
