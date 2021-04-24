@@ -9,7 +9,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.kilocraft.essentials.api.KiloEssentials;
 import org.kilocraft.essentials.api.user.OnlineUser;
+import org.kilocraft.essentials.user.preference.Preferences;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -24,6 +26,15 @@ public class OnlinePlayersCommand extends DiscordFabCommand {
     private int execute(CommandContext<BotCommandSource> ctx) {
         BotCommandSource src = ctx.getSource();
         List<OnlineUser> users = KiloEssentials.getServer().getUserManager().getOnlineUsersAsList();
+        List<OnlineUser> vanishedUsers = new ArrayList<>();
+
+        for (OnlineUser user : users) {
+            if (user.getPreference(Preferences.VANISH)) {
+                vanishedUsers.add(user);
+            }
+        }
+
+        users.removeAll(vanishedUsers);
 
         EmbedBuilder builder = new EmbedBuilder()
                 .setColor(DISCORD_FAB.getEmbedUtil().getDefaultColor())
