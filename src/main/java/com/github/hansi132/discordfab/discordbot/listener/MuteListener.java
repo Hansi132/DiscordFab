@@ -8,6 +8,6 @@ import org.kilocraft.essentials.api.event.player.PlayerMutedEvent;
 public class MuteListener implements EventHandler<PlayerMutedEvent> {
     @Override
     public void handle(@NotNull PlayerMutedEvent playerMutedEvent) {
-        DiscordFab.getInstance().getChatSynchronizer().onUserMute(playerMutedEvent.getVictim(), playerMutedEvent.getSource(), playerMutedEvent.getReason());
+        if (!playerMutedEvent.isSilent()) DiscordFab.getInstance().getChatSynchronizer().onUserPunished(playerMutedEvent.getVictim(), playerMutedEvent.getSource(), playerMutedEvent.getReason(), true);
     }
 }

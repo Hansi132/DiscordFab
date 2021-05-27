@@ -222,10 +222,11 @@ public class ChatSynchronizer {
         this.webhookClientHolder.send(MappedChannel.PUBLIC.id, builder.build());
     }
 
-    public void onUserMute(@NotNull final EntityIdentifiable victim, OnlineUser source, String reason) {
+    public void onUserPunished(@NotNull final EntityIdentifiable victim, OnlineUser source, String reason, boolean mute) {
         WebhookMessageBuilder builder = new WebhookMessageBuilder();
         setMetaFor(victim, builder);
-        builder.setContent(CONFIG.messages.userMuted.replace("%victim%", victim.getName()).replace("%source%", source.getName()).replace("%reason%", reason));
+        String msg = mute ? CONFIG.messages.userMuted : CONFIG.messages.userBanned;
+        builder.setContent(msg.replace("%victim%", victim.getName()).replace("%source%", source.getName()).replace("%reason%", reason));
         this.webhookClientHolder.send(MappedChannel.PUBLIC.id, builder.build());
         net.dv8tion.jda.api.entities.User user = getJDAUser(victim.getId());
         if (user != null) {
