@@ -25,9 +25,11 @@ import org.kilocraft.essentials.api.text.ComponentText;
 import org.kilocraft.essentials.api.text.TextFormat;
 import org.kilocraft.essentials.api.user.OnlineUser;
 import org.kilocraft.essentials.api.user.User;
+import org.kilocraft.essentials.api.user.preference.Preference;
 import org.kilocraft.essentials.api.util.EntityIdentifiable;
 import org.kilocraft.essentials.chat.ServerChat;
 import org.kilocraft.essentials.commands.CommandUtils;
+import org.kilocraft.essentials.user.preference.Preferences;
 import org.kilocraft.essentials.util.text.Texter;
 
 import java.awt.*;
@@ -210,19 +212,6 @@ public class ChatSynchronizer {
         return null;
     }
 
-    public void onUserJoin(@NotNull final User user) {
-        try {
-            UserSynchronizer.syncRoles(user.getUuid());
-        } catch (SQLException | ClassNotFoundException e) {
-            LOGGER.error("Unexpected error while trying to sync user", e);
-        }
-        WebhookMessageBuilder builder = new WebhookMessageBuilder();
-        setMetaFor(user, builder);
-        builder.setContent(CONFIG.messages.userJoin.replace("%name%", user.getName()));
-
-        this.webhookClientHolder.send(MappedChannel.PUBLIC.id, builder.build());
-    }
-
     public void onUserPunished(@NotNull final EntityIdentifiable victim, OnlineUser source, String reason, boolean mute) {
         WebhookMessageBuilder builder = new WebhookMessageBuilder();
         setMetaFor(victim, builder);
@@ -242,7 +231,21 @@ public class ChatSynchronizer {
         }
     }
 
+    public void onUserJoin(@NotNull final User user) {
+        try {
+            UserSynchronizer.syncRoles(user.getUuid());
+        } catch (SQLException | ClassNotFoundException e) {
+            LOGGER.error("Unexpected error while trying to sync user", e);
+        }
+        if (user.getPreference(Preferences.VANISH)) return;
+        WebhookMessageBuilder builder = new WebhookMessageBuilder();
+        setMetaFor(user, builder);
+        builder.setContent(CONFIG.messages.userJoin.replace("%name%", user.getName()));
+        this.webhookClientHolder.send(MappedChannel.PUBLIC.id, builder.build());
+    }
+
     public void onUserLeave(@NotNull final User user) {
+        if (user.getPreference(Preferences.VANISH)) return;
         WebhookMessageBuilder builder = new WebhookMessageBuilder();
         setMetaFor(user, builder);
         builder.setContent(CONFIG.messages.userLeave.replace("%name%", user.getName()));
