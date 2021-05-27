@@ -10,7 +10,7 @@ apply plugin: 'com.github.johnrengelman.shadow'
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 
-version "1.0.4"
+version "1.0.5"
 group "com.github.hansi132.DiscordFab"
 
 minecraft {}
