@@ -10,6 +10,7 @@ import com.github.hansi132.discordfab.discordbot.util.MinecraftAvatar;
 import com.github.hansi132.discordfab.discordbot.util.user.LinkedUser;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
@@ -258,6 +259,25 @@ public class ChatSynchronizer {
         final WebhookMessageBuilder builder = new WebhookMessageBuilder().setContent(TextFormat.clearColorCodes(message));
         setServerUserMeta(builder);
         client.send(builder.build());
+    }
+
+    public void onSuggestion(GuildMessageReceivedEvent event) {
+        String raw = event.getMessage().getContentRaw();
+        Member member = event.getMember();
+        if (member == null) return;
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.setColor(Color.green);
+        embedBuilder.setTitle("Suggestion");
+        embedBuilder.setThumbnail(member.getUser().getAvatarUrl());
+        embedBuilder.addField(member.getEffectiveName() + " suggested:", raw, false);
+        TextChannel staffChannel = DISCORD_FAB.getGuild().getTextChannelById(DISCORD_FAB.getConfig().chatSynchronizer.suggestionChat.staffChannelId);
+        if (staffChannel != null) staffChannel.sendMessage(embedBuilder.build());
+        embedBuilder.setFooter("Please upvote or downvote.");
+        event.getMessage().delete().queue();
+        event.getChannel().sendMessage(embedBuilder.build()).queue(message -> {
+            message.addReaction(DISCORD_FAB.getConfig().chatSynchronizer.suggestionChat.upvoteReactionId).queue();
+            message.addReaction(DISCORD_FAB.getConfig().chatSynchronizer.suggestionChat.downvoteReactionId).queue();
+        });
     }
 
     public void broadcast(@NotNull final MessageEmbed message) {

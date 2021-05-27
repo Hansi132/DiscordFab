@@ -61,7 +61,6 @@ public class Listener extends ListenerAdapter {
     @Override
     public void onGuildMessageReceived(@Nonnull GuildMessageReceivedEvent event) {
         final User user = event.getAuthor();
-        final long suggestionChat = 456904152279285760L;
         if (user.isBot()) {
             return;
         }
@@ -81,9 +80,9 @@ public class Listener extends ListenerAdapter {
                     ),
                     raw
             );
-        } else if (event.getChannel().getIdLong() == suggestionChat) {
-            new SuggestionSender(event);
-        } else if (!event.isWebhookMessage() && DISCORD_FAB.getConfig().chatSynchronizer.toMinecraft && event.getChannel().getIdLong() != suggestionChat) {
+        } else if (event.getChannel().getIdLong() == DISCORD_FAB.getConfig().chatSynchronizer.suggestionChat.discordChannelId) {
+            DISCORD_FAB.getChatSynchronizer().onSuggestion(event);
+        } else if (!event.isWebhookMessage() && DISCORD_FAB.getConfig().chatSynchronizer.toMinecraft) {
             DISCORD_FAB.getChatSynchronizer().onDiscordChat(
                 event.getChannel(), Objects.requireNonNull(event.getMember()), event.getMessage()
             );
