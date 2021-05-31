@@ -8,7 +8,7 @@ import org.kilocraft.essentials.api.event.player.PlayerBannedEvent;
 public class BanListener implements EventHandler<PlayerBannedEvent> {
     @Override
     public void handle(@NotNull PlayerBannedEvent playerBannedEvent) {
-        if (!playerBannedEvent.isSilent()) DiscordFab.getInstance().getChatSynchronizer().onUserPunished(playerBannedEvent.getVictim(), playerBannedEvent.getSource(), playerBannedEvent.getReason(), false);
+        DiscordFab.getInstance().getChatSynchronizer().onUserPunished(playerBannedEvent);
     }
 }
 

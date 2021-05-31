@@ -21,6 +21,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.kilocraft.essentials.api.KiloEssentials;
 import org.kilocraft.essentials.api.KiloServer;
+import org.kilocraft.essentials.api.event.player.PlayerBannedEvent;
+import org.kilocraft.essentials.api.event.player.PlayerMutedEvent;
+import org.kilocraft.essentials.api.event.player.PlayerPunishEventInterface;
 import org.kilocraft.essentials.api.text.ComponentText;
 import org.kilocraft.essentials.api.text.TextFormat;
 import org.kilocraft.essentials.api.user.OnlineUser;
@@ -34,9 +37,9 @@ import org.kilocraft.essentials.util.text.Texter;
 
 import java.awt.*;
 import java.sql.SQLException;
+import java.util.*;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -212,13 +215,13 @@ public class ChatSynchronizer {
         return null;
     }
 
-    public void onUserPunished(@NotNull final EntityIdentifiable victim, OnlineUser source, String reason, boolean mute) {
+    public void onUserPunished(@NotNull final PlayerPunishEventInterface event) {
         WebhookMessageBuilder builder = new WebhookMessageBuilder();
-        setMetaFor(victim, builder);
-        String msg = mute ? CONFIG.messages.userMuted : CONFIG.messages.userBanned;
-        builder.setContent(msg.replace("%victim%", victim.getName()).replace("%source%", source.getName()).replace("%reason%", reason));
-        this.webhookClientHolder.send(MappedChannel.PUBLIC.id, builder.build());
-        net.dv8tion.jda.api.entities.User user = getJDAUser(victim.getId());
+        setMetaFor(event.getVictim(), builder);
+        String msg = event instanceof PlayerMutedEvent ? CONFIG.messages.userMuted : CONFIG.messages.userBanned;
+        builder.setContent(msg.replace("%victim%", event.getVictim().getName()).replace("%source%", event.getSource().getName()).replace("%reason%", event.getReason()));
+        if (!event.isSilent()) this.webhookClientHolder.send(MappedChannel.PUBLIC.id, builder.build());
+        net.dv8tion.jda.api.entities.User user = getJDAUser(event.getVictim().getId());
         if (user != null) {
             Guild guild = DISCORD_FAB.getGuild();
             Member member = guild.getMember(user);
@@ -229,6 +232,50 @@ public class ChatSynchronizer {
                 }
             }
         }
+        if (event instanceof PlayerBannedEvent) {
+            sendReport((PlayerBannedEvent) event);
+        }
+    }
+
+    public void sendReport(PlayerBannedEvent event)  {
+        String victimName = event.getVictim().getName();
+        String staffName = event.getSource().getName();
+        String reason = event.getReason();
+        Date expiry = new Date(event.getExpiry());
+        boolean ipBan = event.isIpBan();
+        boolean permanentBan = event.isPermanent();
+        boolean silent = event.isSilent();
+
+        Color color = permanentBan ? Color.red : Color.orange;
+        String title = (permanentBan ? "Permban" : "Tempban") +
+                (ipBan ? " ipBan" : "") +
+                (silent ? " (silent)" : "");
+
+        Date from = new Date();
+        int banTimeInMillis = (int) Math.abs(expiry.getTime() - from.getTime());
+        long diff = TimeUnit.HOURS.convert(banTimeInMillis, TimeUnit.MILLISECONDS) + 1;
+        String banTimeText = diff + " hours";
+
+        if (diff >= 24) {
+            diff = diff / 24;
+            banTimeText = diff + " days";
+        }
+
+        EmbedBuilder embedBuilder = new EmbedBuilder()
+                .setColor(color)
+                .setTitle(title)
+                .addField(staffName + " banned: " , victimName, false)
+                .addField("Reason:", reason, false);
+        if (permanentBan) {
+            embedBuilder.addField("Time expires:", "Never", false);
+        } else {
+            embedBuilder.addField("Time expires:", expiry.toString(), false);
+            embedBuilder.addField("Ban time:", banTimeText, false);
+        }
+
+
+        TextChannel channel = DiscordFab.getBot().getTextChannelById(DiscordFab.getInstance().getConfig().chatSynchronizer.banChatId);
+        if (channel != null) channel.sendMessage(embedBuilder.build()).queue();
     }
 
     public void onUserJoin(@NotNull final User user) {
