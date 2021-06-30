@@ -8,7 +8,7 @@ import java.util.Random;
 
 public class LinkKeyCreator {
     public static int checkKey(int linkKey) throws SQLException, ClassNotFoundException {
-        return checkKey(linkKey, DatabaseConnection.connect());
+        return checkKey(linkKey, DatabaseConnection.getConnection());
     }
 
     private static int checkKey(int linkKey, Connection conn) throws SQLException {
@@ -24,7 +24,6 @@ public class LinkKeyCreator {
             return checkKey(linkKey, conn);
         }
 
-        conn.close();
         return linkKey;
     }
 }

@@ -39,7 +39,7 @@ public class DiscordLinkCommand {
         int linkKey;
 
         try {
-            Connection connection = DatabaseConnection.connect();
+            Connection connection = DatabaseConnection.getConnection();
             linkKey = LinkKeyCreator.checkKey(testKey);
 
             String selectSql = "SELECT McUUID, DiscordId, LinkKey FROM linkedaccounts WHERE McUUID = ?;";
@@ -65,7 +65,6 @@ public class DiscordLinkCommand {
             insertStatement.setString(3, user.getUsername());
             insertStatement.execute();
 
-            connection.close();
         } catch (SQLException e) {
             user.sendMessage(
                     Texter.newText("Unexpected database error.").styled((style) ->

@@ -33,7 +33,7 @@ public class Listener extends ListenerAdapter {
         DiscordFab.getInstance().getInviteTracker().cacheInvites(DiscordFab.getInstance().getGuild());
         LOGGER.info("{} is ready", event.getJDA().getSelfUser().getAsTag());
         try {
-            Connection connection = DatabaseConnection.connect();
+            Connection connection = DatabaseConnection.getConnection();
             Statement stmt = connection.createStatement();
             stmt.execute(Constants.linkedAccountsDatabase);
             stmt.execute(Constants.trackedinvitesDatabase);

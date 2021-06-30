@@ -6,6 +6,7 @@ import com.github.hansi132.discordfab.DiscordFab;
 import com.github.hansi132.discordfab.discordbot.config.section.messagesync.ChatChannelSynchronizerConfigSection;
 import com.github.hansi132.discordfab.discordbot.config.section.messagesync.ChatSynchronizerConfigSection;
 import com.github.hansi132.discordfab.discordbot.integration.UserSynchronizer;
+import com.github.hansi132.discordfab.discordbot.util.DatabaseConnection;
 import com.github.hansi132.discordfab.discordbot.util.MinecraftAvatar;
 import com.github.hansi132.discordfab.discordbot.util.user.LinkedUser;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -306,7 +307,7 @@ public class ChatSynchronizer {
             return;
         }
 
-        final WebhookMessageBuilder builder = new WebhookMessageBuilder().setContent(TextFormat.clearColorCodes(message));
+        final WebhookMessageBuilder builder = new WebhookMessageBuilder().setContent(ComponentText.clearFormatting(message));
         setServerUserMeta(builder);
         client.send(builder.build());
     }
@@ -352,6 +353,11 @@ public class ChatSynchronizer {
     public void shutdown() {
         this.onServerEvent(ServerEvent.STOP);
         this.webhookClientHolder.closeAll();
+        try {
+            DatabaseConnection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public void onServerEvent(@NotNull final ServerEvent event) {

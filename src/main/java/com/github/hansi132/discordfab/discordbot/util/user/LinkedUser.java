@@ -45,7 +45,7 @@ public class LinkedUser {
 
     public void updateName(String mcName) {
         if (!this.mcName.equals(mcName)) {
-            Connection conn = DatabaseConnection.connect();
+            Connection conn = DatabaseConnection.getConnection();
             String updateSql = "UPDATE linkedaccounts SET McUsername = ? WHERE LinkKey = ?;";
             try {
                 PreparedStatement updateStatement = conn.prepareStatement(updateSql);
@@ -60,7 +60,7 @@ public class LinkedUser {
     }
 
     public void updateDiscordID(long discordID) {
-        Connection conn = DatabaseConnection.connect();
+        Connection conn = DatabaseConnection.getConnection();
         String updateSql = "UPDATE linkedaccounts SET DiscordId = ? WHERE LinkKey = ?;";
         try {
             PreparedStatement updateStatement = conn.prepareStatement(updateSql);

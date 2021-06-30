@@ -1,7 +1,6 @@
 package com.github.hansi132.discordfab.discordbot.util;
 
 import com.github.hansi132.discordfab.DiscordFab;
-import com.github.hansi132.discordfab.discordbot.integration.UserSynchronizer;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.User;
@@ -91,7 +90,7 @@ public class InviteTracker {
         List<Long> list = new ArrayList<>();
         LinkedHashSet<Long> hashSet = new LinkedHashSet<>();
         try {
-            Connection connection = DatabaseConnection.connect();
+            Connection connection = DatabaseConnection.getConnection();
             String selectSql = "SELECT * FROM trackedinvites WHERE InviterDiscordId = ?;";
             PreparedStatement insertStatement = connection.prepareStatement(selectSql);
             insertStatement.setLong(1, inviter);
@@ -111,7 +110,7 @@ public class InviteTracker {
         List<Long> list = new ArrayList<>();
         LinkedHashSet<Long> hashSet = new LinkedHashSet<>();
         try {
-            Connection connection = DatabaseConnection.connect();
+            Connection connection = DatabaseConnection.getConnection();
             String selectSql = "SELECT * FROM trackedinvites;";
             PreparedStatement insertStatement = connection.prepareStatement(selectSql);
             ResultSet rs = insertStatement.executeQuery();
@@ -128,7 +127,7 @@ public class InviteTracker {
 
     private void addEntry(long inviter, long invited) {
         try {
-            Connection connection = DatabaseConnection.connect();
+            Connection connection = DatabaseConnection.getConnection();
             String insertSql = "INSERT INTO trackedinvites (InviterDiscordId, InvitedDiscordId) VALUES (?, ?);";
             PreparedStatement insertStatement = connection.prepareStatement(insertSql);
             insertStatement.setLong(1, inviter);
