@@ -6,10 +6,12 @@ import com.github.hansi132.discordfab.DiscordFab;
 import com.github.hansi132.discordfab.discordbot.config.section.messagesync.ChatChannelSynchronizerConfigSection;
 import com.github.hansi132.discordfab.discordbot.config.section.messagesync.ChatSynchronizerConfigSection;
 import com.github.hansi132.discordfab.discordbot.integration.UserSynchronizer;
+import com.github.hansi132.discordfab.discordbot.util.DatabaseConnection;
 import com.github.hansi132.discordfab.discordbot.util.MinecraftAvatar;
 import com.github.hansi132.discordfab.discordbot.util.user.LinkedUser;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
@@ -20,20 +22,25 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.kilocraft.essentials.api.KiloEssentials;
 import org.kilocraft.essentials.api.KiloServer;
+import org.kilocraft.essentials.api.event.player.PlayerBannedEvent;
+import org.kilocraft.essentials.api.event.player.PlayerMutedEvent;
+import org.kilocraft.essentials.api.event.player.PlayerPunishEventInterface;
 import org.kilocraft.essentials.api.text.ComponentText;
 import org.kilocraft.essentials.api.text.TextFormat;
 import org.kilocraft.essentials.api.user.OnlineUser;
 import org.kilocraft.essentials.api.user.User;
+import org.kilocraft.essentials.api.user.preference.Preference;
 import org.kilocraft.essentials.api.util.EntityIdentifiable;
 import org.kilocraft.essentials.chat.ServerChat;
 import org.kilocraft.essentials.commands.CommandUtils;
+import org.kilocraft.essentials.user.preference.Preferences;
 import org.kilocraft.essentials.util.text.Texter;
 
 import java.awt.*;
 import java.sql.SQLException;
+import java.util.*;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -209,25 +216,13 @@ public class ChatSynchronizer {
         return null;
     }
 
-    public void onUserJoin(@NotNull final User user) {
-        try {
-            UserSynchronizer.syncRoles(user.getUuid());
-        } catch (SQLException | ClassNotFoundException e) {
-            LOGGER.error("Unexpected error while trying to sync user", e);
-        }
+    public void onUserPunished(@NotNull final PlayerPunishEventInterface event) {
         WebhookMessageBuilder builder = new WebhookMessageBuilder();
-        setMetaFor(user, builder);
-        builder.setContent(CONFIG.messages.userJoin.replace("%name%", user.getName()));
-
-        this.webhookClientHolder.send(MappedChannel.PUBLIC.id, builder.build());
-    }
-
-    public void onUserMute(@NotNull final EntityIdentifiable victim, OnlineUser source, String reason) {
-        WebhookMessageBuilder builder = new WebhookMessageBuilder();
-        setMetaFor(victim, builder);
-        builder.setContent(CONFIG.messages.userMuted.replace("%victim%", victim.getName()).replace("%source%", source.getName()).replace("%reason%", reason));
-        this.webhookClientHolder.send(MappedChannel.PUBLIC.id, builder.build());
-        net.dv8tion.jda.api.entities.User user = getJDAUser(victim.getId());
+        setMetaFor(event.getVictim(), builder);
+        String msg = event instanceof PlayerMutedEvent ? CONFIG.messages.userMuted : CONFIG.messages.userBanned;
+        builder.setContent(msg.replace("%victim%", event.getVictim().getName()).replace("%source%", event.getSource().getName()).replace("%reason%", event.getReason()));
+        if (!event.isSilent()) this.webhookClientHolder.send(MappedChannel.PUBLIC.id, builder.build());
+        net.dv8tion.jda.api.entities.User user = getJDAUser(event.getVictim().getId());
         if (user != null) {
             Guild guild = DISCORD_FAB.getGuild();
             Member member = guild.getMember(user);
@@ -238,9 +233,67 @@ public class ChatSynchronizer {
                 }
             }
         }
+        if (event instanceof PlayerBannedEvent) {
+            sendReport((PlayerBannedEvent) event);
+        }
+    }
+
+    public void sendReport(PlayerBannedEvent event)  {
+        String victimName = event.getVictim().getName();
+        String staffName = event.getSource().getName();
+        String reason = event.getReason();
+        Date expiry = new Date(event.getExpiry());
+        boolean ipBan = event.isIpBan();
+        boolean permanentBan = event.isPermanent();
+        boolean silent = event.isSilent();
+
+        Color color = permanentBan ? Color.red : Color.orange;
+        String title = (permanentBan ? "Permban" : "Tempban") +
+                (ipBan ? " ipBan" : "") +
+                (silent ? " (silent)" : "");
+
+        Date from = new Date();
+        int banTimeInMillis = (int) Math.abs(expiry.getTime() - from.getTime());
+        long diff = TimeUnit.HOURS.convert(banTimeInMillis, TimeUnit.MILLISECONDS) + 1;
+        String banTimeText = diff + " hours";
+
+        if (diff >= 24) {
+            diff = diff / 24;
+            banTimeText = diff + " days";
+        }
+
+        EmbedBuilder embedBuilder = new EmbedBuilder()
+                .setColor(color)
+                .setTitle(title)
+                .addField(staffName + " banned: " , victimName, false)
+                .addField("Reason:", reason, false);
+        if (permanentBan) {
+            embedBuilder.addField("Time expires:", "Never", false);
+        } else {
+            embedBuilder.addField("Time expires:", expiry.toString(), false);
+            embedBuilder.addField("Ban time:", banTimeText, false);
+        }
+
+
+        TextChannel channel = DiscordFab.getBot().getTextChannelById(DiscordFab.getInstance().getConfig().chatSynchronizer.banChatId);
+        if (channel != null) channel.sendMessage(embedBuilder.build()).queue();
+    }
+
+    public void onUserJoin(@NotNull final User user) {
+        try {
+            UserSynchronizer.syncRoles(user.getUuid());
+        } catch (SQLException | ClassNotFoundException e) {
+            LOGGER.error("Unexpected error while trying to sync user", e);
+        }
+        if (user.getPreference(Preferences.VANISH)) return;
+        WebhookMessageBuilder builder = new WebhookMessageBuilder();
+        setMetaFor(user, builder);
+        builder.setContent(CONFIG.messages.userJoin.replace("%name%", user.getName()));
+        this.webhookClientHolder.send(MappedChannel.PUBLIC.id, builder.build());
     }
 
     public void onUserLeave(@NotNull final User user) {
+        if (user.getPreference(Preferences.VANISH)) return;
         WebhookMessageBuilder builder = new WebhookMessageBuilder();
         setMetaFor(user, builder);
         builder.setContent(CONFIG.messages.userLeave.replace("%name%", user.getName()));
@@ -254,9 +307,28 @@ public class ChatSynchronizer {
             return;
         }
 
-        final WebhookMessageBuilder builder = new WebhookMessageBuilder().setContent(TextFormat.clearColorCodes(message));
+        final WebhookMessageBuilder builder = new WebhookMessageBuilder().setContent(ComponentText.clearFormatting(message));
         setServerUserMeta(builder);
         client.send(builder.build());
+    }
+
+    public void onSuggestion(GuildMessageReceivedEvent event) {
+        String raw = event.getMessage().getContentRaw();
+        Member member = event.getMember();
+        if (member == null) return;
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.setColor(Color.green);
+        embedBuilder.setTitle("Suggestion");
+        embedBuilder.setThumbnail(member.getUser().getAvatarUrl());
+        embedBuilder.addField(member.getEffectiveName() + " suggested:", raw, false);
+        TextChannel staffChannel = DISCORD_FAB.getGuild().getTextChannelById(DISCORD_FAB.getConfig().chatSynchronizer.suggestionChat.staffChannelId);
+        if (staffChannel != null) staffChannel.sendMessage(embedBuilder.build());
+        embedBuilder.setFooter("Please upvote or downvote.");
+        event.getMessage().delete().queue();
+        event.getChannel().sendMessage(embedBuilder.build()).queue(message -> {
+            message.addReaction(DISCORD_FAB.getConfig().chatSynchronizer.suggestionChat.upvoteReactionId).queue();
+            message.addReaction(DISCORD_FAB.getConfig().chatSynchronizer.suggestionChat.downvoteReactionId).queue();
+        });
     }
 
     public void broadcast(@NotNull final MessageEmbed message) {
@@ -281,6 +353,11 @@ public class ChatSynchronizer {
     public void shutdown() {
         this.onServerEvent(ServerEvent.STOP);
         this.webhookClientHolder.closeAll();
+        try {
+            DatabaseConnection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public void onServerEvent(@NotNull final ServerEvent event) {

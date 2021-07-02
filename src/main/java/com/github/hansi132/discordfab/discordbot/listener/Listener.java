@@ -33,7 +33,7 @@ public class Listener extends ListenerAdapter {
         DiscordFab.getInstance().getInviteTracker().cacheInvites(DiscordFab.getInstance().getGuild());
         LOGGER.info("{} is ready", event.getJDA().getSelfUser().getAsTag());
         try {
-            Connection connection = DatabaseConnection.connect();
+            Connection connection = DatabaseConnection.getConnection();
             Statement stmt = connection.createStatement();
             stmt.execute(Constants.linkedAccountsDatabase);
             stmt.execute(Constants.trackedinvitesDatabase);
@@ -61,7 +61,6 @@ public class Listener extends ListenerAdapter {
     @Override
     public void onGuildMessageReceived(@Nonnull GuildMessageReceivedEvent event) {
         final User user = event.getAuthor();
-        final long suggestionChat = DiscordFab.getInstance().getConfig().suggestionChatId;
         if (user.isBot()) {
             return;
         }
@@ -81,9 +80,9 @@ public class Listener extends ListenerAdapter {
                     ),
                     raw
             );
-        } else if (event.getChannel().getIdLong() == suggestionChat) {
-            new SuggestionSender(event);
-        } else if (!event.isWebhookMessage() && DISCORD_FAB.getConfig().chatSynchronizer.toMinecraft && event.getChannel().getIdLong() != suggestionChat) {
+        } else if (event.getChannel().getIdLong() == DISCORD_FAB.getConfig().chatSynchronizer.suggestionChat.discordChannelId) {
+            DISCORD_FAB.getChatSynchronizer().onSuggestion(event);
+        } else if (!event.isWebhookMessage() && DISCORD_FAB.getConfig().chatSynchronizer.toMinecraft) {
             DISCORD_FAB.getChatSynchronizer().onDiscordChat(
                 event.getChannel(), Objects.requireNonNull(event.getMember()), event.getMessage()
             );

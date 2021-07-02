@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.exceptions.ContextException;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.sharding.ShardManager;
+import net.dv8tion.jda.internal.utils.PermissionUtil;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.query.QueryOptions;
@@ -121,13 +122,13 @@ public class UserSynchronizer {
         for (Role role : guild.getRoles()) {
             if (role.getName().equals("@everyone") || role.getPosition() >= highestRole) continue;
             long roleID = role.getIdLong();
+            if (!DISCORD_FAB.getConfig().userSync.syncedRoles.contains(roleID)) continue;
             if (shouldSync(mcUUID, roleID)) {
                 User user = BOT.getUserById(discordID);
                 if (user != null) {
                     Member member = guild.getMember(user);
                     if (member != null) {
                         try {
-                            DiscordFab.LOGGER.info("Trying to add " + role + " to " + user + " " + member);
                             guild.addRoleToMember(member, role).queue();
                         } catch (Exception ignored) {
                         }
