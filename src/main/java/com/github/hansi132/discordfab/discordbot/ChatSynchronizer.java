@@ -1,6 +1,8 @@
 package com.github.hansi132.discordfab.discordbot;
 
 import club.minnced.discord.webhook.WebhookClient;
+import club.minnced.discord.webhook.send.WebhookEmbed;
+import club.minnced.discord.webhook.send.WebhookEmbedBuilder;
 import club.minnced.discord.webhook.send.WebhookMessageBuilder;
 import com.github.hansi132.discordfab.DiscordFab;
 import com.github.hansi132.discordfab.discordbot.config.section.messagesync.ChatChannelSynchronizerConfigSection;
@@ -26,10 +28,8 @@ import org.kilocraft.essentials.api.event.player.PlayerBannedEvent;
 import org.kilocraft.essentials.api.event.player.PlayerMutedEvent;
 import org.kilocraft.essentials.api.event.player.PlayerPunishEventInterface;
 import org.kilocraft.essentials.api.text.ComponentText;
-import org.kilocraft.essentials.api.text.TextFormat;
 import org.kilocraft.essentials.api.user.OnlineUser;
 import org.kilocraft.essentials.api.user.User;
-import org.kilocraft.essentials.api.user.preference.Preference;
 import org.kilocraft.essentials.api.util.EntityIdentifiable;
 import org.kilocraft.essentials.chat.ServerChat;
 import org.kilocraft.essentials.commands.CommandUtils;
@@ -286,17 +286,26 @@ public class ChatSynchronizer {
             LOGGER.error("Unexpected error while trying to sync user", e);
         }
         if (user.getPreference(Preferences.VANISH)) return;
-        WebhookMessageBuilder builder = new WebhookMessageBuilder();
-        setMetaFor(user, builder);
-        builder.setContent(CONFIG.messages.userJoin.replace("%name%", user.getName()));
-        this.webhookClientHolder.send(MappedChannel.PUBLIC.id, builder.build());
+        broadCastPlayerEvent(user, CONFIG.messages.userJoin.replace("%name%", user.getName()), Color.GREEN);
     }
 
     public void onUserLeave(@NotNull final User user) {
         if (user.getPreference(Preferences.VANISH)) return;
+        broadCastPlayerEvent(user, CONFIG.messages.userLeave.replace("%name%", user.getName()), Color.RED);
+    }
+
+    public void broadCastPlayerEvent(User user, String message, Color color) {
         WebhookMessageBuilder builder = new WebhookMessageBuilder();
-        setMetaFor(user, builder);
-        builder.setContent(CONFIG.messages.userLeave.replace("%name%", user.getName()));
+
+        setServerUserMeta(builder);
+        builder.addEmbeds(
+                new WebhookEmbedBuilder()
+                        .setDescription("")
+                        .setAuthor(
+                                new WebhookEmbed.EmbedAuthor(message, getMCAvatarURL(user.getId()), "")
+                        ).setColor(color.getRGB())
+                        .build()
+        );
 
         this.webhookClientHolder.send(MappedChannel.PUBLIC.id, builder.build());
     }
@@ -337,7 +346,7 @@ public class ChatSynchronizer {
             return;
         }
 
-        channel.sendMessage(message);
+        channel.sendMessage(message).queue();
     }
 
     public void setMetaFor(@NotNull final EntityIdentifiable user, @NotNull final WebhookMessageBuilder builder) {
