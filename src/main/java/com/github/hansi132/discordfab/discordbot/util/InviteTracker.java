@@ -31,20 +31,16 @@ public class InviteTracker {
     }
 
     public void onGuildMemberJoin(@Nonnull GuildMemberJoinEvent event) {
-        DiscordFab.LOGGER.info("onGuildMemberJoinEvent: " + event.getUser().getName() + " joined " + event.getGuild().getName());
         event.getGuild().retrieveInvites().queue(invites -> {
             for (Invite invite : invites) {
                 User inviter = invite.getInviter();
                 if (inviter == null) {
-                    DiscordFab.LOGGER.error("Inviter is null");
                     continue;
                 }
                 if (!inviteCache.containsKey(invite)) {
-                    DiscordFab.LOGGER.info(invite.getCode() + " by " + invite.getInviter().getName() + " hasn't been cached WTF");
                     continue;
                 }
                 int i = inviteCache.get(invite);
-                DiscordFab.LOGGER.info("Checking " + invite.getCode() + " by " + invite.getInviter().getName() + ", cached uses: " + i + ", uses: " + invite.getUses());
                 if (invite.getUses() != i) {
                     long inviterID = inviter.getIdLong();
                     long invitedID = event.getUser().getIdLong();
@@ -53,7 +49,6 @@ public class InviteTracker {
                     this.cacheInvites(event.getGuild());
                     return;
                 } else {
-                    DiscordFab.LOGGER.info(invite.getCode() + " didn't change and isn't eligible");
                 }
             }
             DiscordFab.LOGGER.error("This shouldn't have happened! A new member joined, but we couldn't detect who invited them!");
@@ -62,7 +57,6 @@ public class InviteTracker {
     }
 
     public void onGuildInviteChange(@Nonnull GenericGuildInviteEvent event) {
-        DiscordFab.LOGGER.info(event.getCode() + " changed " + "(" + (event instanceof GuildInviteDeleteEvent ? "deleted" : "created") + ")" + " caching.");
         this.cacheInvites(event.getGuild());
     }
 
