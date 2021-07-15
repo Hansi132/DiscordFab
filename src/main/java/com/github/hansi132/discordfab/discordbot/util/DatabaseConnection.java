@@ -3,9 +3,8 @@ package com.github.hansi132.discordfab.discordbot.util;
 import com.github.hansi132.discordfab.DiscordFab;
 import com.github.hansi132.discordfab.discordbot.config.DataConfig;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.function.Consumer;
 
 public class DatabaseConnection {
 

@@ -16,6 +16,10 @@ minecraft {}
 
 repositories {
     mavenCentral()
+    maven {
+        name 'm2-dv8tion'
+        url 'https://m2.dv8tion.net/releases'
+    }
     maven { url 'https://jitpack.io' }
     maven {
         name = 'Fabric'
@@ -46,8 +50,8 @@ dependencies {
     implementation "net.luckperms:api:5.0"
 
 
-    implementation group: 'net.dv8tion', name: 'JDA', version: '4.1.1_150'
-    shadow group: 'net.dv8tion', name: 'JDA', version: '4.1.1_150'
+    implementation group: 'net.dv8tion', name: 'JDA', version: '4.3.0_296'
+    shadow group: 'net.dv8tion', name: 'JDA', version: '4.3.0_296'
 
     implementation group: 'com.jagrosh', name: 'jda-utilities', version: '3.0.3'
     shadow group: 'com.jagrosh', name: 'jda-utilities', version: '3.0.3'

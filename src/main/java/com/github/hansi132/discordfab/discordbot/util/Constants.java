@@ -22,4 +22,11 @@ public class Constants {
             + "    InvitedDiscordId BIGINT(20),\n"
             + "    PRIMARY KEY (Id)\n"
             + ");";
+
+    public static final String trackedSuggestions = "CREATE TABLE IF NOT EXISTS trackedsuggestions (\n"
+            + "    Id INTEGER NOT NULL AUTO_INCREMENT,\n"
+            + "    SuggestionMessageId BIGINT(20),\n"
+            + "    StaffMessageId BIGINT(20),\n"
+            + "    PRIMARY KEY (Id)\n"
+            + ");";
 }

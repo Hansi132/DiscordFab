@@ -7,6 +7,9 @@ import ninja.leaping.configurate.objectmapping.serialize.ConfigSerializable;
 public class SuggestionChannelConfigSection {
 
     @Setting
+    public boolean enabled = false;
+
+    @Setting
     public long discordChannelId = 0L;
 
     @Setting

@@ -9,11 +9,16 @@ import com.github.hansi132.discordfab.discordbot.config.section.messagesync.Chat
 import com.github.hansi132.discordfab.discordbot.config.section.messagesync.ChatSynchronizerConfigSection;
 import com.github.hansi132.discordfab.discordbot.integration.UserSynchronizer;
 import com.github.hansi132.discordfab.discordbot.util.DatabaseConnection;
+import com.github.hansi132.discordfab.discordbot.util.FabUtil;
 import com.github.hansi132.discordfab.discordbot.util.MinecraftAvatar;
 import com.github.hansi132.discordfab.discordbot.util.user.LinkedUser;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.guild.react.GuildMessageReactionAddEvent;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.Button;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
@@ -37,6 +42,8 @@ import org.kilocraft.essentials.user.preference.Preferences;
 import org.kilocraft.essentials.util.text.Texter;
 
 import java.awt.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.List;
@@ -324,20 +331,51 @@ public class ChatSynchronizer {
     public void onSuggestion(GuildMessageReceivedEvent event) {
         String raw = event.getMessage().getContentRaw();
         Member member = event.getMember();
-        if (member == null) return;
-        EmbedBuilder embedBuilder = new EmbedBuilder();
-        embedBuilder.setColor(Color.green);
-        embedBuilder.setTitle("Suggestion");
-        embedBuilder.setThumbnail(member.getUser().getAvatarUrl());
-        embedBuilder.addField(member.getEffectiveName() + " suggested:", raw, false);
-        TextChannel staffChannel = DISCORD_FAB.getGuild().getTextChannelById(DISCORD_FAB.getConfig().chatSynchronizer.suggestionChat.staffChannelId);
-        if (staffChannel != null) staffChannel.sendMessage(embedBuilder.build());
-        embedBuilder.setFooter("Please upvote or downvote.");
         event.getMessage().delete().queue();
-        event.getChannel().sendMessage(embedBuilder.build()).queue(message -> {
+        if (member == null) return;
+        EmbedBuilder builder = suggestionEmbed(member, raw);
+        builder.setFooter("Please upvote or downvote.");
+        event.getChannel().sendMessageEmbeds(builder.build()).queue(message -> {
             message.addReaction(DISCORD_FAB.getConfig().chatSynchronizer.suggestionChat.upvoteReactionId).queue();
             message.addReaction(DISCORD_FAB.getConfig().chatSynchronizer.suggestionChat.downvoteReactionId).queue();
+
+            TextChannel staffChannel = DISCORD_FAB.getGuild().getTextChannelById(DISCORD_FAB.getConfig().chatSynchronizer.suggestionChat.staffChannelId);
+            MessageBuilder msgBuilder = new MessageBuilder();
+            msgBuilder.setActionRows(ActionRow.of(net.dv8tion.jda.api.interactions.components.Button.success("discordfab-accept", "Accept"), Button.danger("discordfab-deny", "Deny"), Button.link(String.format("https://discord.com/channels/%s/%s/%s", DISCORD_FAB.getGuild().getId(), DISCORD_FAB.getConfig().chatSynchronizer.suggestionChat.discordChannelId, message.getId()), "Jump to")));
+            msgBuilder.setEmbeds(suggestionEmbed(member, raw).build());
+            if (staffChannel != null) staffChannel.sendMessage(msgBuilder.build()).queue(staffMessage -> {
+                try {
+                    Connection connection = DatabaseConnection.getConnection();
+                    String insertSql = "INSERT INTO trackedsuggestions (SuggestionMessageId, StaffMessageId) VALUES (?, ?);";
+                    PreparedStatement insertStatement = connection.prepareStatement(insertSql);
+                    insertStatement.setLong(1, message.getIdLong());
+                    insertStatement.setLong(2, staffMessage.getIdLong());
+                    insertStatement.execute();
+                } catch (SQLException e) {
+                    DiscordFab.LOGGER.error("Could not query the database!", e);
+                }
+            });
         });
+    }
+
+    public void onStaffInput(GuildMessageReceivedEvent event) {
+        Message message = event.getMessage();
+        Message referencedMessage = message.getReferencedMessage();
+        if (referencedMessage == null) return;
+        Message suggestionMessage = FabUtil.getSuggestionMessage(referencedMessage.getIdLong());
+        if (suggestionMessage == null) return;
+        EmbedBuilder builder = FabUtil.updateFooter(suggestionMessage.getEmbeds().get(0), event.getMessage().getContentRaw());
+        referencedMessage.editMessageEmbeds(builder.build()).queue();
+        suggestionMessage.editMessageEmbeds(builder.build()).queue();
+    }
+
+    private EmbedBuilder suggestionEmbed(Member member, String message) {
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.setColor(Color.gray);
+        embedBuilder.setTitle("Suggestion");
+        embedBuilder.setThumbnail(member.getUser().getAvatarUrl());
+        embedBuilder.addField(member.getEffectiveName() + " suggested:", message, false);
+        return embedBuilder;
     }
 
     public void broadcast(@NotNull final MessageEmbed message) {
@@ -346,7 +384,7 @@ public class ChatSynchronizer {
             return;
         }
 
-        channel.sendMessage(message).queue();
+        channel.sendMessageEmbeds(message).queue();
     }
 
     public void setMetaFor(@NotNull final EntityIdentifiable user, @NotNull final WebhookMessageBuilder builder) {
