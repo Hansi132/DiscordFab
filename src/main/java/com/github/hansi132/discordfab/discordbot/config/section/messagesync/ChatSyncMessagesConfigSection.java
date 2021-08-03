@@ -15,4 +15,7 @@ public class ChatSyncMessagesConfigSection {
     @Setting(comment = "Variables: %victim%, %source%, %reason%")
     public String userMuted = "%victim% was muted by %source%. Reason: %reason%";
 
+    @Setting(comment = "Variables: %victim%, %source%, %reason%")
+    public String userBanned = "%victim% was banned by %source%. Reason: %reason%";
+
 }

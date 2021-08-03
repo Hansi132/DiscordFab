@@ -5,7 +5,6 @@ import com.github.hansi132.discordfab.discordbot.api.command.BotCommandSource;
 import com.github.hansi132.discordfab.discordbot.api.command.CommandCategory;
 import com.github.hansi132.discordfab.discordbot.api.command.DiscordFabCommand;
 import com.github.hansi132.discordfab.discordbot.api.command.exception.BotCommandException;
-import com.github.hansi132.discordfab.discordbot.api.text.Messages;
 import com.github.hansi132.discordfab.discordbot.command.*;
 import com.github.hansi132.discordfab.discordbot.config.MainConfig;
 import com.google.common.collect.Maps;
@@ -19,6 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.kilocraft.essentials.config.messages.Messages;
 
 import java.util.Locale;
 import java.util.Map;
@@ -96,7 +96,7 @@ public class CommandManager {
         } catch (Exception e) {
             final EmbedBuilder builder = new EmbedBuilder()
                     .setTitle("An unexpected error occurred while trying to execute that command")
-                    .addField("Exception message", Messages.getInnermostMessage(e), false);
+                    .addField("Exception message", e.getMessage(), false);
 
             if (DiscordFab.getInstance().isDevelopment()) {
                 StringBuilder stringBuilder = new StringBuilder();

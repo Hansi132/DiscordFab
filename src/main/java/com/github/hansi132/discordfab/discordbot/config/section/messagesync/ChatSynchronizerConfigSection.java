@@ -31,6 +31,12 @@ public class ChatSynchronizerConfigSection {
     @Setting(value = "socialSpy", comment = "for public chat")
     public ChatChannelSynchronizerConfigSection socialSpy = new ChatChannelSynchronizerConfigSection("**to %target% ->**");
 
+    @Setting(value = "suggestionChat", comment = "for suggestion chat")
+    public SuggestionChannelConfigSection suggestionChat = new SuggestionChannelConfigSection();
+
+    @Setting(value = "banChatId", comment = "for ban reports")
+    public long banChatId = 0;
+
     @Setting
     public EventMessagesConfigSection event = new EventMessagesConfigSection();
 

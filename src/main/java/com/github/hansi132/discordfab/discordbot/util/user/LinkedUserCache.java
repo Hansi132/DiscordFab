@@ -15,7 +15,7 @@ import java.util.UUID;
 public class LinkedUserCache extends ArrayList<LinkedUser> {
 
     public LinkedUserCache() {
-        Connection conn = DatabaseConnection.connect();
+        Connection conn = DatabaseConnection.getConnection();
         String selectSql = "SELECT * FROM linkedaccounts;";
         try {
             PreparedStatement selectStmt = conn.prepareStatement(selectSql);
@@ -31,7 +31,7 @@ public class LinkedUserCache extends ArrayList<LinkedUser> {
             for (LinkedUser linkedUser : this) {
                 if (linkedUser.getLinkKey() == linkKey) return Optional.of(linkedUser);
             }
-            Connection conn = DatabaseConnection.connect();
+            Connection conn = DatabaseConnection.getConnection();
             String selectSql = "SELECT * FROM linkedaccounts WHERE LinkKey = ?;";
             PreparedStatement selectStmt = conn.prepareStatement(selectSql);
             selectStmt.setInt(1, linkKey);
@@ -48,7 +48,7 @@ public class LinkedUserCache extends ArrayList<LinkedUser> {
             for (LinkedUser linkedUser : this) {
                 if (linkedUser.getMcUUID() == mcUUID) return Optional.of(linkedUser);
             }
-            Connection conn = DatabaseConnection.connect();
+            Connection conn = DatabaseConnection.getConnection();
             String selectSql = "SELECT * FROM linkedaccounts WHERE McUUID = ?;";
             PreparedStatement selectStmt = conn.prepareStatement(selectSql);
             selectStmt.setString(1, mcUUID.toString());
@@ -66,7 +66,7 @@ public class LinkedUserCache extends ArrayList<LinkedUser> {
                 if (linkedUser.getDiscordID().isPresent() && linkedUser.getDiscordID().get() == discordID)
                     return Optional.of(linkedUser);
             }
-            Connection conn = DatabaseConnection.connect();
+            Connection conn = DatabaseConnection.getConnection();
             String selectSql = "SELECT * FROM linkedaccounts WHERE DiscordId = ?;";
             PreparedStatement selectStmt = conn.prepareStatement(selectSql);
             selectStmt.setLong(1, discordID);
@@ -95,7 +95,7 @@ public class LinkedUserCache extends ArrayList<LinkedUser> {
     public void removeUser(LinkedUser linkedUser) {
         this.remove(linkedUser);
         try {
-            Connection conn = DatabaseConnection.connect();
+            Connection conn = DatabaseConnection.getConnection();
             String deleteSql = "DELETE FROM linkedaccounts WHERE LinkKey = ?;";
             PreparedStatement deleteStmt = conn.prepareStatement(deleteSql);
             deleteStmt.setInt(1, linkedUser.getLinkKey());

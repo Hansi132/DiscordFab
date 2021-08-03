@@ -1,6 +1,5 @@
 package com.github.hansi132.discordfab.discordbot.command;
 
-import com.github.hansi132.discordfab.discordbot.api.text.Messages;
 import com.github.hansi132.discordfab.discordbot.util.DatabaseConnection;
 import com.github.hansi132.discordfab.discordbot.util.LinkKeyCreator;
 import com.mojang.brigadier.CommandDispatcher;
@@ -39,7 +38,7 @@ public class DiscordLinkCommand {
         int linkKey;
 
         try {
-            Connection connection = DatabaseConnection.connect();
+            Connection connection = DatabaseConnection.getConnection();
             linkKey = LinkKeyCreator.checkKey(testKey);
 
             String selectSql = "SELECT McUUID, DiscordId, LinkKey FROM linkedaccounts WHERE McUUID = ?;";
@@ -65,11 +64,10 @@ public class DiscordLinkCommand {
             insertStatement.setString(3, user.getUsername());
             insertStatement.execute();
 
-            connection.close();
         } catch (SQLException e) {
             user.sendMessage(
                     Texter.newText("Unexpected database error.").styled((style) ->
-                            style.withHoverEvent(Texter.Events.onHover(Messages.getInnermostMessage(e))))
+                            style.withHoverEvent(Texter.Events.onHover(e.getMessage())))
             );
         } catch (ClassNotFoundException e) {
             user.sendError(ExceptionMessageNode.UNKNOWN_COMMAND_EXCEPTION);

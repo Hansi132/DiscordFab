@@ -2,10 +2,9 @@
   "required": true,
   "minVersion": "0.7.11",
   "package": "com.github.hansi132.discordfab.discordbot.mixin",
-  "compatibilityLevel": "JAVA_8",
+  "compatibilityLevel": "JAVA_16",
   "mixins": [
-  ],
-  "server": [
+    "PlayerAdvancementTrackerMixin",
     "ServerPlayerEntityMixin"
   ],
   "injectors": {
